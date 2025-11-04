@@ -1,0 +1,44 @@
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+}
+
+.card {
+    background-color: #111 !important;
+    border: 1px solid #222 !important;
+    color: #fff !important;
+}
+
+.card-title {
+    color: #fff !important;
+}
+
+.display-6, .display-5, .fw-semibold, .fw-bold {
+    color: #40FB50 !important; /* verde brillante de tu marca */
+}
+
+.navbar {
+    background-color: #000 !important;
+    border-bottom: 1px solid #222;
+}
+
+.navbar-brand {
+    color: #40FB50 !important;
+    font-weight: 700;
+}
+
+.text-muted {
+    color: #bbb !important;
+}
+
+.alert-danger {
+    background-color: #220000;
+    border-color: #ff5555;
+    color: #ffaaaa;
+}
+
+.spinner-border {
+    color: #40FB50 !important;
+}
