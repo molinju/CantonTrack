@@ -1,4 +1,3 @@
-// src/components/Dashboard.jsx
 import { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
 import { api } from '../api';
@@ -12,10 +11,14 @@ export default function Dashboard() {
         let mounted = true;
         (async () => {
             try {
-                // elige uno según tu backend disponible:
-                // const data = await api.listMetrics();
-                const data = await api.latestAll();
-                if (mounted) { setItems(data); setLoading(false); }
+                const { metrics } = await api.listMetrics(); // {count, metrics:[...] }
+                const latest = await Promise.all(
+                    metrics.map(async (m) => {
+                        const r = await api.latestOf(m); // {metric, data:{captured_at,value}}
+                        return { key: m, ...r.data };
+                    })
+                );
+                if (mounted) { setItems(latest); setLoading(false); }
             } catch (e) {
                 if (mounted) { setErr(e.message || 'Error'); setLoading(false); }
             }
@@ -23,15 +26,9 @@ export default function Dashboard() {
         return () => { mounted = false; };
     }, []);
 
-    if (loading) return (
-        <Container className="py-4"><Spinner animation="border" /> Cargando…</Container>
-    );
-    if (err) return (
-        <Container className="py-4"><Alert variant="danger">Error: {err}</Alert></Container>
-    );
+    if (loading) return <Container className="py-4"><Spinner animation="border" /> Cargando…</Container>;
+    if (err)      return <Container className="py-4"><Alert variant="danger">Error: {err}</Alert></Container>;
 
-    // adapta al formato real que devuelva tu API
-    // ejemplo esperado: [{ key: 'total_cc', captured_at: '2025-11-04T12:00:00Z', value: 33071512954.48 }, ...]
     return (
         <Container className="py-4">
             <Row xs={1} md={2} lg={3} className="g-3">
