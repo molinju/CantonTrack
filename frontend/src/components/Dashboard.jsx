@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Button, Badge } from 'react-bootstrap';
 import { api } from '../api';
+import MetricsCharts from './MetricsCharts';
 
 function formatNumber(n) {
     if (n === null || n === undefined) return '—';
@@ -15,6 +16,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState(null);
     const [items, setItems] = useState([]);
+    const [showCharts, setShowCharts] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -58,6 +60,9 @@ export default function Dashboard() {
                     <Button variant="secondary" onClick={load} disabled={loading}>
                         {loading ? 'Actualizando…' : 'Refresh'}
                     </Button>
+                    <Button variant="outline-success" onClick={() => setShowCharts(s => !s)}>
+                        {showCharts ? 'Hide charts' : 'Show charts'}
+                    </Button>
                     <Badge bg="dark">
                         {items.length} metrics
                     </Badge>
@@ -99,6 +104,11 @@ export default function Dashboard() {
                     </Col>
                 ))}
             </Row>
+
+            {/* charts section */}
+            {showCharts && (
+                <MetricsCharts metrics={items.map(i => i.key)} limit={200} />
+            )}
         </Container>
     );
 }
