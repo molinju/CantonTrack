@@ -55,3 +55,8 @@ EXPOSE 8080
 
 # Arranque
 CMD sh -lc "php-fpm -D; nginx -t; nginx -g 'daemon off;'"
+
+# Asegurar permisos de var/ para Symfony en prod
+RUN mkdir -p var/cache var/log \
+ && chown -R www-data:www-data var \
+ && chmod -R u+rwX var
