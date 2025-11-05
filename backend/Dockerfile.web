@@ -1,4 +1,4 @@
-# Composer deps sin scripts
+# ---- deps (Composer) ----
 FROM composer:2 AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
@@ -6,7 +6,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-
 COPY . .
 RUN composer dump-autoload --optimize --classmap-authoritative
 
-# Runtime con PHP-FPM + Nginx
+# ---- runtime: PHP-FPM + Nginx ----
 FROM php:8.3-fpm-alpine
 RUN apk add --no-cache tzdata postgresql-client postgresql-dev nginx $PHPIZE_DEPS \
  && docker-php-ext-install pdo pdo_pgsql \
@@ -15,25 +15,35 @@ ENV APP_ENV=prod TZ=Europe/Madrid
 WORKDIR /var/www/html
 COPY --from=vendor /app /var/www/html
 
-# Nginx conf (API + CORS básico)
-RUN printf 'server {\n\
-  listen 8080;\n\
-  server_name _;\n\
-  root /var/www/html/public;\n\
-  index index.php;\n\
-  add_header Access-Control-Allow-Origin "*" always;\n\
-  add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;\n\
-  add_header Access-Control-Allow-Methods "GET, OPTIONS" always;\n\
-  location / { try_files $uri /index.php$is_args$args; }\n\
-  location = /metrics/latest { try_files $uri /index.php$is_args$args; }\n\
-  location = /metrics { try_files $uri /index.php$is_args$args; }\n\
-  location ~ \\.php$ {\n\
-    include fastcgi_params;\n\
-    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n\
-    fastcgi_pass 127.0.0.1:9000;\n\
-  }\n\
-  location /healthz { return 200 "ok\\n"; add_header Content-Type text/plain; }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+RUN mkdir -p /etc/nginx/conf.d
+RUN cat > /etc/nginx/conf.d/default.conf <<'NGINX'
+server {
+  listen 8080;
+  server_name _;
 
-# Arranque conjunto
+  root /var/www/html/public;
+  index index.php;
+
+  add_header Access-Control-Allow-Origin "*" always;
+  add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+  add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+
+  location /healthz {
+    return 200 "ok\n";
+    add_header Content-Type text/plain;
+  }
+
+  location / {
+    try_files $uri /index.php$is_args$args;
+  }
+
+  location ~ \.php$ {
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_pass 127.0.0.1:9000;
+  }
+}
+NGINX
+
+EXPOSE 8080
 CMD sh -lc "php-fpm -D && nginx -g 'daemon off;'"
