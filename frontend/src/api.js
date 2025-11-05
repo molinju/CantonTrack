@@ -1,20 +1,18 @@
 // src/api.js
-const API_BASE =
-    import.meta.env.VITE_API_URL?.replace(/\/$/, '') // p.ej. https://api.tu-dominio.com
-    ?? `${window.location.origin}/api`;               // fallback: mismo host bajo /api
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, ''); // p.ej. http://51.75.254.181:8081/api
 
 async function get(path) {
-    const res = await fetch(`${API_BASE}${path}`, { headers: { 'Accept': 'application/json' } });
+    const res = await fetch(`${API_BASE}${path}`, { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
 }
 
-// Ejemplos de endpoints (ajusta a tu API real)
+// tus endpoints reales:
 export const api = {
-    // última captura de todas las métricas
-    latestAll: () => get('/metrics/latest'),
-    // última captura de una métrica concreta ?key=
-    latestByKey: (key) => get(`/metrics/latest?key=${encodeURIComponent(key)}`),
-    // lista de métricas disponibles
-    listMetrics: () => get('/metrics'),
+    listMetrics: () => get('/stats'),                         // GET /api/stats
+    latestOf: (metric) => get(`/stats/${metric}/latest`),     // GET /api/stats/{metric}/latest
+    seriesOf: (metric, params={}) => {
+        const qs = new URLSearchParams(params).toString();
+        return get(`/stats/${metric}${qs ? `?${qs}` : ''}`);    // GET /api/stats/{metric}
+    },
 };
