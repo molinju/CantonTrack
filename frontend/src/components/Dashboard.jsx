@@ -40,7 +40,7 @@ export default function Dashboard() {
             latest.sort((a, b) => new Date(b.captured_at || 0) - new Date(a.captured_at || 0));
             setItems(latest);
         } catch (e) {
-            setErr(e?.message || 'Error cargando métricas');
+            setErr(e?.message || 'Error loading metrics');
         } finally {
             setLoading(false);
         }
@@ -53,13 +53,13 @@ export default function Dashboard() {
     return (
         <Container className="py-4">
             <div className="d-flex align-items-center justify-content-between mb-3">
-                <h2 className="m-0">Métricas (última captura)</h2>
+                <h2 className="m-0">Metrics (latest)</h2>
                 <div className="d-flex gap-2">
                     <Button variant="secondary" onClick={load} disabled={loading}>
                         {loading ? 'Actualizando…' : 'Refresh'}
                     </Button>
                     <Badge bg="dark">
-                        {items.length} métricas
+                        {items.length} metrics
                     </Badge>
                 </div>
             </div>
@@ -67,7 +67,7 @@ export default function Dashboard() {
             {loading && (
                 <div className="d-flex align-items-center gap-2">
                     <Spinner animation="border" size="sm" />
-                    <span>Cargando…</span>
+                    <span>Loading…</span>
                 </div>
             )}
 
@@ -76,7 +76,7 @@ export default function Dashboard() {
             )}
 
             {!loading && !err && items.length === 0 && (
-                <Alert variant="warning" className="mt-2">No hay métricas disponibles.</Alert>
+                <Alert variant="warning" className="mt-2">Not metrics available.</Alert>
             )}
 
             <Row xs={1} md={2} lg={3} className="g-3 mt-1">
@@ -92,7 +92,7 @@ export default function Dashboard() {
                                 <div className="text-muted mt-2" style={{ fontSize: '0.9rem' }}>
                                     {m.captured_at
                                         ? new Date(m.captured_at).toLocaleString()
-                                        : 'sin fecha'}
+                                        : 'no date'}
                                 </div>
                             </Card.Body>
                         </Card>
