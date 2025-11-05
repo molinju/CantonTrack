@@ -1,0 +1,20 @@
+# Etapa deps
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+# 👉 evita post-install scripts (cache:clear, assets:install, etc.)
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts
+COPY . .
+# autoload optimizado sin scripts
+RUN composer dump-autoload --optimize --classmap-authoritative
+
+
+FROM php:8.3-cli-alpine
+# Necesario para compilar pdo_pgsql en Alpine
+RUN apk add --no-cache tzdata postgresql-client postgresql-dev $PHPIZE_DEPS \
+    && docker-php-ext-install pdo_pgsql \
+    && apk del $PHPIZE_DEPS
+ENV APP_ENV=prod TZ=Europe/Madrid
+WORKDIR /app
+COPY --from=vendor /app /app
+CMD ["sh","-c","tail -f /dev/null"]

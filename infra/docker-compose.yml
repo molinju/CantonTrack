@@ -1,0 +1,80 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: cantontrack
+      TZ: Europe/Madrid
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d cantontrack"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.cli
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: "postgresql://app:${POSTGRES_PASSWORD}@db:5432/cantontrack?serverVersion=15&charset=utf8"
+      TZ: Europe/Madrid
+      DEFAULT_URI: "https://example.local"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.cli
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: "postgresql://app:${POSTGRES_PASSWORD}@db:5432/cantontrack?serverVersion=15&charset=utf8"
+      TZ: Europe/Madrid
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./logs:/var/log
+    command: >
+      sh -lc '
+        echo "SHELL=/bin/sh" > /etc/crontabs/root &&
+        echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" >> /etc/crontabs/root &&
+        # a las 00,04,08,12,16,20 hora de Madrid
+        echo "0 0,4,8,12,16,20 * * * cd /app && php bin/console app:fetch-cantonscan-stats --env=prod >> /var/log/cron.log 2>&1" >> /etc/crontabs/root &&
+        crond -f -L /var/log/cron.log
+      '
+    restart: unless-stopped
+
+   web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "http://51.75.254.181"
+    ports:
+      - "3000:80"
+
+  backend-web:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.web
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: "postgresql://app:${POSTGRES_PASSWORD}@db:5432/cantontrack?serverVersion=15&charset=utf8"
+      TZ: Europe/Madrid
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:8080"   # API en http://IP:8081
+    restart: unless-stopped
